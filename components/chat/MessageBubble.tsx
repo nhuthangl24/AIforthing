@@ -21,20 +21,14 @@ export function MessageBubble({ message }: { message: Message }) {
   };
 
   return (
-    <div className="flex w-full gap-4 py-6 group">
-      <div className="shrink-0 flex items-start justify-center">
-        {isUser ? (
-          <div className="w-8 h-8 rounded-md bg-muted flex items-center justify-center border">
-            <User className="w-5 h-5 text-muted-foreground" />
-          </div>
-        ) : (
-          <div className="w-8 h-8 rounded-md bg-orange-600/10 border border-orange-500/20 flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-orange-500" />
-          </div>
-        )}
-      </div>
+    <div className={cn("flex w-full gap-4 py-4 group", isUser ? "justify-end" : "justify-start")}>
+      {!isUser && (
+        <div className="shrink-0 flex items-start justify-center mt-1">
+          <Sparkles className="w-5 h-5 text-[#d96745]" />
+        </div>
+      )}
       
-      <div className="flex flex-col gap-2 flex-1 max-w-3xl min-w-0">
+      <div className={cn("flex flex-col gap-2 max-w-[85%] min-w-0", isUser ? "items-end" : "flex-1 max-w-3xl")}>
         {/* Attachments */}
         {message.attachments && message.attachments.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-2">
@@ -50,14 +44,14 @@ export function MessageBubble({ message }: { message: Message }) {
           </div>
         )}
 
-        <div className="text-foreground relative min-h-[32px] flex flex-col justify-center">
+        <div className={cn("text-foreground relative min-h-[32px] flex flex-col justify-center", isUser ? "bg-[#2a2a2a] px-5 py-3 rounded-2xl rounded-tr-sm" : "w-full")}>
           {message.thinking && !message.content ? (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span className="text-sm font-medium">Thinking...</span>
+            <div className="flex items-center gap-2 text-muted-foreground italic font-serif">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#d96745]" />
+              <span className="text-[15px]">Thinking deeply, stand by...</span>
             </div>
           ) : isUser ? (
-            <div className="whitespace-pre-wrap text-lg leading-relaxed">{message.content}</div>
+            <div className="whitespace-pre-wrap text-[15px] leading-relaxed">{message.content}</div>
           ) : (
             <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none break-words leading-relaxed">
               <ReactMarkdown
@@ -103,11 +97,11 @@ export function MessageBubble({ message }: { message: Message }) {
 
           {/* Action Row & Usage Data */}
           {!isUser && !message.thinking && message.content && (
-            <div className="flex items-center gap-4 mt-4 pt-2">
+            <div className="flex flex-wrap items-center gap-2 md:gap-4 mt-4 pt-2">
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 gap-1.5 text-muted-foreground hover:text-foreground -ml-2 transition-opacity"
+                className="h-8 gap-1.5 text-muted-foreground hover:text-foreground -ml-2 transition-opacity shrink-0"
                 onClick={handleCopy}
               >
                 <Copy className="w-3.5 h-3.5" />
@@ -115,7 +109,7 @@ export function MessageBubble({ message }: { message: Message }) {
               </Button>
               
               {message.usage && (
-                <div className="text-xs text-muted-foreground font-mono flex items-center gap-3 ml-auto transition-opacity">
+                <div className="text-[10px] md:text-xs text-muted-foreground font-mono flex flex-wrap items-center gap-2 md:gap-3 ml-auto transition-opacity">
                   <span title="Prompt tokens">In: {message.usage.prompt_tokens}</span>
                   <span title="Completion tokens">Out: {message.usage.completion_tokens}</span>
                   <span title="Total tokens" className="font-medium text-foreground/70">Total: {message.usage.total_tokens}</span>

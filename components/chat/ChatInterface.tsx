@@ -80,14 +80,6 @@ export function ChatInterface() {
       convId = createConversation(globalModelId);
     }
     
-    // Check vision support if attachments are present
-    if (attachments.length > 0) {
-      if (!activeModel.vision) {
-        alert(`The selected model (${activeModel.name}) does not support image analysis. Please choose a vision-capable model.`);
-        return;
-      }
-    }
-
     addMessage(convId, { role: "user", content, attachments });
 
     setIsStreaming(true);
@@ -242,16 +234,18 @@ export function ChatInterface() {
       
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
         {/* Header */}
-        <header className="h-14 flex items-center justify-between px-4 border-b border-white/5 shrink-0 bg-background/80 backdrop-blur-sm z-10">
+        <header className="h-14 flex items-center justify-between px-4 shrink-0 z-10 border-b border-white/5 bg-background/80 backdrop-blur-sm">
           <div className="flex items-center gap-2">
             {!sidebarOpen && (
-              <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
-                <PanelLeftOpen className="w-5 h-5 text-muted-foreground" />
+              <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)} className="text-muted-foreground hover:bg-white/5 rounded-md h-8 w-8">
+                <PanelLeftOpen className="w-5 h-5" />
               </Button>
             )}
-            <ModelSelector conversationId={currentConversationId} />
-            <div className="ml-2 px-3 py-1 bg-[#2a2a2a] rounded-full text-sm font-medium border border-white/5 hidden md:flex items-center gap-2">
-              <span className="text-foreground/90">{new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(globalCredits !== null ? globalCredits : credits)} Credits</span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <div className="hidden md:flex px-3 py-1.5 bg-white/5 rounded-md text-xs font-medium border border-white/5 items-center gap-2">
+              <span className="text-foreground/80">{new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(globalCredits !== null ? globalCredits : credits)} Credits</span>
               {globalFreeTokens !== null && (
                 <>
                   <span className="text-white/20">|</span>
@@ -259,11 +253,8 @@ export function ChatInterface() {
                 </>
               )}
             </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <div className="md:hidden px-2 py-1 bg-[#2a2a2a] rounded-full text-xs font-medium border border-white/5 flex items-center gap-1">
-              <span>{new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(globalCredits !== null ? globalCredits : credits)} Cr</span>
+            <div className="md:hidden px-2 py-1.5 bg-white/5 rounded-md text-[10px] font-medium border border-white/5 flex items-center gap-1">
+              <span className="text-foreground/80">{new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(globalCredits !== null ? globalCredits : credits)} Cr</span>
               {globalFreeTokens !== null && (
                 <>
                   <span className="text-white/20">|</span>
@@ -288,8 +279,14 @@ export function ChatInterface() {
         <MessageList messages={messages} isStreaming={isStreaming} />
         
         {/* Input Area */}
-        <div className="shrink-0">
-          <Composer onSend={handleSend} isStreaming={isStreaming} onStop={handleStop} />
+        <div className="shrink-0 bg-gradient-to-t from-background via-background to-transparent pt-4">
+          <Composer 
+            onSend={handleSend} 
+            isStreaming={isStreaming} 
+            onStop={handleStop} 
+            conversationId={currentConversationId} 
+            visionSupported={activeModel?.vision ?? true}
+          />
         </div>
       </div>
     </div>

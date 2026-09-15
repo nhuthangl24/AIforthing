@@ -3,17 +3,20 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Paperclip, Send, Square, X } from "lucide-react";
+import { Plus, ArrowUp, Square, X } from "lucide-react";
 import { Attachment } from "@/lib/store/chat-store";
 import { cn } from "@/lib/utils";
+import { ModelSelector } from "./ModelSelector";
 
 interface ComposerProps {
   onSend: (content: string, attachments: Attachment[]) => void;
   isStreaming: boolean;
   onStop: () => void;
+  conversationId?: string | null;
+  visionSupported?: boolean;
 }
 
-export function Composer({ onSend, isStreaming, onStop }: ComposerProps) {
+export function Composer({ onSend, isStreaming, onStop, conversationId, visionSupported = true }: ComposerProps) {
   const [content, setContent] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -36,6 +39,13 @@ export function Composer({ onSend, isStreaming, onStop }: ComposerProps) {
       textareaRef.current.style.height = "auto";
     }
   };
+
+  // Clear attachments if switching to a non-vision model
+  useEffect(() => {
+    if (!visionSupported && attachments.length > 0) {
+      setAttachments([]);
+    }
+  }, [visionSupported, attachments.length]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -99,6 +109,7 @@ export function Composer({ onSend, isStreaming, onStop }: ComposerProps) {
   };
 
   const handlePaste = async (e: React.ClipboardEvent) => {
+    if (!visionSupported) return;
     if (e.clipboardData.items) {
       const files: File[] = [];
       for (let i = 0; i < e.clipboardData.items.length; i++) {
@@ -116,6 +127,7 @@ export function Composer({ onSend, isStreaming, onStop }: ComposerProps) {
 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
+    if (!visionSupported) return;
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       await processFiles(Array.from(e.dataTransfer.files));
     }
@@ -154,19 +166,35 @@ export function Composer({ onSend, isStreaming, onStop }: ComposerProps) {
           </div>
         )}
 
-        <div className="relative flex flex-col bg-[#2a2a2a] border border-white/10 rounded-2xl p-1 shadow-lg transition-all focus-within:ring-1 focus-within:ring-white/20">
-          <Textarea
-            ref={textareaRef}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onPaste={handlePaste}
-            placeholder="Write a message..."
-            className="min-h-[52px] max-h-[40vh] bg-transparent border-0 focus-visible:ring-0 px-3 py-3 resize-none text-[15px] placeholder:text-zinc-500"
-            disabled={isStreaming}
-          />
+        <div className="relative flex flex-col bg-[#2a2a2a] border border-white/10 rounded-2xl p-2 shadow-[0_2px_12px_0px_rgba(0,0,0,0.4)] transition-all focus-within:ring-1 focus-within:ring-white/20">
+          <div className="flex items-start">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className={cn("shrink-0 rounded-full h-8 w-8 mt-1.5 ml-1", 
+                !visionSupported ? "opacity-50 cursor-not-allowed text-zinc-600" : "text-zinc-400 hover:text-zinc-100 hover:bg-white/5"
+              )}
+              onClick={() => {
+                if (visionSupported) fileInputRef.current?.click();
+              }}
+              disabled={attachments.length >= 4 || isStreaming || !visionSupported}
+              title={visionSupported ? "Attach image" : "Image upload not supported by this model"}
+            >
+              <Plus className="w-5 h-5" />
+            </Button>
+            <Textarea
+              ref={textareaRef}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onPaste={handlePaste}
+              placeholder="Reply to Claude..."
+              className="min-h-[52px] max-h-[40vh] bg-transparent border-0 focus-visible:ring-0 px-2 py-3 resize-none text-[15px] placeholder:text-zinc-500 w-full"
+              disabled={isStreaming}
+            />
+          </div>
           
-          <div className="flex items-center justify-between px-2 pb-1.5 pt-1">
+          <div className="flex items-center justify-between px-1 pb-1 pt-2">
             <input 
               type="file" 
               ref={fileInputRef} 
@@ -175,22 +203,17 @@ export function Composer({ onSend, isStreaming, onStop }: ComposerProps) {
               multiple 
               onChange={handleFileChange}
             />
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="shrink-0 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700/50 h-8 w-8"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={attachments.length >= 4 || isStreaming}
-              title="Attach image"
-            >
-              <Paperclip className="w-4 h-4" />
-            </Button>
+            
+            <div className="flex-1" />
+
+            <div className="flex items-center gap-2">
+              <ModelSelector conversationId={conversationId} />
 
             {isStreaming ? (
               <Button 
                 variant="default" 
                 size="icon" 
-                className="shrink-0 rounded-lg h-8 w-8 bg-zinc-100 text-zinc-900 hover:bg-white"
+                className="shrink-0 rounded-full h-8 w-8 bg-black text-white hover:bg-black/80"
                 onClick={onStop}
               >
                 <Square className="w-3.5 h-3.5 fill-current" />
@@ -200,19 +223,20 @@ export function Composer({ onSend, isStreaming, onStop }: ComposerProps) {
                 variant="default" 
                 size="icon" 
                 className={cn(
-                  "shrink-0 rounded-lg h-8 w-8 transition-colors",
-                  !content.trim() && attachments.length === 0 ? "bg-zinc-700 text-zinc-500" : "bg-white text-black hover:bg-zinc-200"
+                  "shrink-0 rounded-full h-8 w-8 transition-colors",
+                  !content.trim() && attachments.length === 0 ? "bg-zinc-700 text-zinc-500" : "bg-[#d96745] text-white hover:bg-[#c45738]"
                 )}
                 onClick={handleSend}
                 disabled={!content.trim() && attachments.length === 0}
               >
-                <Send className="w-4 h-4 ml-0.5" />
+                <ArrowUp className="w-4 h-4 stroke-[2.5]" />
               </Button>
             )}
+            </div>
           </div>
         </div>
-        <div className="text-center mt-3 text-xs text-zinc-500">
-          AI models can make mistakes. Please double-check responses.
+        <div className="text-center mt-3 text-[11px] text-muted-foreground/60 font-medium">
+          AI can make mistakes. Please double-check responses.
         </div>
       </div>
     </div>

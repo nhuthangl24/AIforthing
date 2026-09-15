@@ -24,8 +24,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${montserrat.variable} ${geistMono.variable} font-sans antialiased min-h-screen bg-[#111111] text-[#ededed]`}>
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <body className={`${montserrat.variable} ${geistMono.variable} font-sans antialiased min-h-screen bg-background text-foreground`}>
         <TooltipProvider>
           {children}
         </TooltipProvider>

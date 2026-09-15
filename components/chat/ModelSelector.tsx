@@ -42,10 +42,10 @@ export function ModelSelector({ conversationId }: ModelSelectorProps) {
 
   return (
     <Select value={currentModelId} onValueChange={handleValueChange}>
-      <SelectTrigger className="w-[250px] bg-background">
+      <SelectTrigger className="w-auto border-0 bg-transparent hover:bg-white/5 shadow-none font-medium text-muted-foreground focus:ring-0 h-8 text-[13px] gap-1 px-2">
         <SelectValue placeholder="Select a model" />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent side="top" alignItemWithTrigger={false} className="max-h-[70vh] md:max-h-[500px] min-w-[240px]">
         {freeModels.length > 0 && (
           <SelectGroup>
             <SelectLabel className="flex items-center gap-2 text-green-500 font-semibold">
