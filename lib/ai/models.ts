@@ -10,9 +10,7 @@ export interface AIModel {
 export const models: AIModel[] = [
   // Kira AI Free Models
   { id: 'kira-mini-1.0', name: 'Kira Mini 1.0', provider: 'Kira AI', cost: 0, vision: false, description: 'Mô hình AI miễn phí của KiraAI, đa năng, phù hợp cho hội thoại hàng ngày. Không tốn lượt token.' },
-  { id: 'mimo-v2.5-free', name: 'Mimo V2.5 Free', provider: 'Kira AI', cost: 0, vision: false, description: 'Mimo V2.5 là mô hình tiệm cận cao cấp, tối ưu chi phí với khả năng suy luận mạnh mẽ và xử lý ngữ cảnh mượt mà.' },
-  { id: 'hy3-free', name: 'Tencent: Hy3 Free', provider: 'Kira AI', cost: 0, vision: false, description: 'Tencent: Hy3 Free là mô hình AI thương mại cao cấp của Tencent với khả năng lập trình Agent vượt trội.' },
-  { id: 'qwen3.8-flash-free', name: 'Qwen3.8 Flash Free', provider: 'Kira AI', cost: 0, vision: false, description: 'Qwen3.8-Flash là mô hình đa phương thức giá siêu rẻ từ Alibaba, chuyên phục vụ lập trình và xử lý ngôn ngữ.' },
+
   { id: 'glm-5.3-free', name: 'GLM 5.3 Free', provider: 'Kira AI', cost: 0, vision: false, description: 'GLM 5.3 là mô hình ngôn ngữ lớn tiên tiến sở hữu khả năng hiểu và tạo văn bản song ngữ cực kỳ linh hoạt.' },
   
   // HHTECH Models

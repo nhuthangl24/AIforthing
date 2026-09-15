@@ -188,7 +188,7 @@ export function Composer({ onSend, isStreaming, onStop, conversationId, visionSu
               onChange={(e) => setContent(e.target.value)}
               onKeyDown={handleKeyDown}
               onPaste={handlePaste}
-              placeholder="Reply to Claude..."
+              placeholder="Reply to AI..."
               className="min-h-[52px] max-h-[40vh] bg-transparent border-0 focus-visible:ring-0 px-2 py-3 resize-none text-[15px] placeholder:text-zinc-500 w-full"
               disabled={isStreaming}
             />
