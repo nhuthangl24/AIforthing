@@ -43,7 +43,7 @@ export function ChatInterface() {
         if (data.freeTokens !== undefined) setGlobalFreeTokens(data.freeTokens);
       }
     } catch (error) {
-      console.error('Failed to fetch credits:', error);
+      // Silently ignore fetch errors (e.g., during server restart or offline)
     }
   };
   useEffect(() => {
