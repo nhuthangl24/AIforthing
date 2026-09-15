@@ -42,6 +42,7 @@ interface ChatState {
   credits: number; // User credits
   
   // Actions
+  setCredits: (amount: number) => void;
   deductCredits: (amount: number) => void;
   createConversation: (modelId?: string) => string;
   setCurrentConversation: (id: string | null) => void;
@@ -62,8 +63,9 @@ export const useChatStore = create<ChatState>()(
       currentConversationId: null,
       sidebarOpen: true,
       globalModelId: getDefaultModelId(),
-      credits: 54953.28,
+      credits: 54943.47,
 
+      setCredits: (amount) => set({ credits: amount }),
       deductCredits: (amount) => set((state) => ({
         credits: Math.max(0, state.credits - amount)
       })),

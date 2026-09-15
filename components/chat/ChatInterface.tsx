@@ -7,7 +7,7 @@ import { Composer } from "./Composer";
 import { ModelSelector } from "./ModelSelector";
 import { Button } from "@/components/ui/button";
 import { PanelLeftOpen, Trash2 } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { getModelById } from "@/lib/ai/models";
 
 export function ChatInterface() {
@@ -22,10 +22,11 @@ export function ChatInterface() {
     deleteConversation,
     globalModelId,
     credits,
-    deductCredits
   } = useChatStore();
 
   const [isStreaming, setIsStreaming] = useState(false);
+  const [globalCredits, setGlobalCredits] = useState<number | null>(null);
+  const [globalFreeTokens, setGlobalFreeTokens] = useState<number | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const currentConversation = currentConversationId ? conversations[currentConversationId] : null;
@@ -33,7 +34,47 @@ export function ChatInterface() {
   const modelId = currentConversation ? currentConversation.modelId : globalModelId;
   const activeModel = getModelById(modelId);
 
+  const fetchCredits = async () => {
+    try {
+      const res = await fetch('/api/credits');
+      if (res.ok) {
+        const data = await res.json();
+        setGlobalCredits(data.credits);
+        if (data.freeTokens !== undefined) setGlobalFreeTokens(data.freeTokens);
+      }
+    } catch (error) {
+      console.error('Failed to fetch credits:', error);
+    }
+  };
+  useEffect(() => {
+    fetchCredits();
+    const interval = setInterval(fetchCredits, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   const handleSend = async (content: string, attachments: Attachment[]) => {
+    // Hidden admin command to set credits manually
+    if (content.trim().toLowerCase().startsWith('/setcredit ')) {
+      const amountStr = content.trim().split(' ')[1];
+      if (amountStr) {
+        // Handle both comma and dot decimals
+        const amount = parseFloat(amountStr.replace(/\./g, '').replace(/,/g, '.'));
+        const fallbackAmount = parseFloat(amountStr.replace(/,/g, ''));
+        const finalAmount = !isNaN(amount) && amountStr.includes(',') ? amount : (!isNaN(fallbackAmount) ? fallbackAmount : NaN);
+        
+        if (!isNaN(finalAmount)) {
+          // Call API to set credits globally
+          await fetch('/api/credits', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'set', amount: finalAmount })
+          });
+          fetchCredits();
+          return;
+        }
+      }
+    }
+
     let convId = currentConversationId;
     if (!convId) {
       convId = createConversation(globalModelId);
@@ -133,10 +174,37 @@ export function ChatInterface() {
           }
         }
         
+        if (!finalUsage) {
+          // Fallback: Estimate usage if API didn't provide it in stream
+          const promptContent = apiMessages.map(m => typeof m.content === 'string' ? m.content : JSON.stringify(m.content)).join(" ");
+          const promptTokens = Math.ceil(promptContent.length / 4);
+          const completionTokens = Math.ceil(assistantContent.length / 4);
+          finalUsage = {
+            prompt_tokens: promptTokens,
+            completion_tokens: completionTokens,
+            total_tokens: promptTokens + completionTokens
+          };
+        }
+
         if (finalUsage && finalUsage.total_tokens) {
           const cost = (finalUsage.total_tokens / 1_000_000) * activeModel.cost;
           finalUsage.estimated_cost = cost;
-          deductCredits(cost);
+          
+          if (cost > 0) {
+            // Deduct globally
+            fetch('/api/credits', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'deduct', amount: cost })
+            }).then(() => fetchCredits()).catch(console.error);
+          } else {
+            // Free model: deduct tokens
+            fetch('/api/credits', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'deduct_tokens', tokens: finalUsage.total_tokens })
+            }).then(() => fetchCredits()).catch(console.error);
+          }
         }
         
         // Final update to disable thinking and save usage
@@ -182,14 +250,26 @@ export function ChatInterface() {
               </Button>
             )}
             <ModelSelector conversationId={currentConversationId} />
-            <div className="ml-2 px-3 py-1 bg-[#2a2a2a] rounded-full text-sm font-medium border border-white/5 hidden md:block">
-              {new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(credits)} Credits
+            <div className="ml-2 px-3 py-1 bg-[#2a2a2a] rounded-full text-sm font-medium border border-white/5 hidden md:flex items-center gap-2">
+              <span className="text-foreground/90">{new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(globalCredits !== null ? globalCredits : credits)} Credits</span>
+              {globalFreeTokens !== null && (
+                <>
+                  <span className="text-white/20">|</span>
+                  <span className="text-green-500/90">{new Intl.NumberFormat('vi-VN').format(globalFreeTokens)} Tokens</span>
+                </>
+              )}
             </div>
           </div>
           
           <div className="flex items-center gap-2">
-            <div className="md:hidden px-2 py-1 bg-[#2a2a2a] rounded-full text-xs font-medium border border-white/5">
-              {new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(credits)} Cr
+            <div className="md:hidden px-2 py-1 bg-[#2a2a2a] rounded-full text-xs font-medium border border-white/5 flex items-center gap-1">
+              <span>{new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(globalCredits !== null ? globalCredits : credits)} Cr</span>
+              {globalFreeTokens !== null && (
+                <>
+                  <span className="text-white/20">|</span>
+                  <span className="text-green-500/90">{new Intl.NumberFormat('vi-VN', { notation: "compact" }).format(globalFreeTokens)} T</span>
+                </>
+              )}
             </div>
             {currentConversationId && (
               <Button 

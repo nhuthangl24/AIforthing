@@ -3,8 +3,9 @@
 import { useChatStore } from "@/lib/store/chat-store";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageSquare, Plus, Trash2, X, PanelLeftClose } from "lucide-react";
+import { MessageSquare, Plus, Trash2, X, PanelLeftClose, Server } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 export function Sidebar() {
   const { 
@@ -72,6 +73,16 @@ export function Sidebar() {
           )}
         </div>
       </ScrollArea>
+      
+      {/* Footer Navigation */}
+      <div className="p-4 border-t border-white/5 mt-auto">
+        <Link href="/models" className="w-full">
+          <Button variant="outline" className="w-full justify-start gap-2 bg-[#1a1a1a] hover:bg-[#222] border-white/10 text-muted-foreground hover:text-white transition-colors">
+            <Server className="w-4 h-4 text-orange-500" />
+            Trạng thái Models
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 }

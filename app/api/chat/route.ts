@@ -24,9 +24,21 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate against whitelist
-    const modelExists = models.some(m => m.id === modelId);
-    if (!modelExists) {
+    const model = models.find(m => m.id === modelId);
+    if (!model) {
       return NextResponse.json({ error: 'Model not found or not supported.' }, { status: 404 });
+    }
+
+    let API_KEY: string | undefined = HHTECH_API_KEY;
+    let BASE_URL = HHTECH_BASE_URL;
+
+    if (model.provider === 'Kira AI') {
+      API_KEY = process.env.KIRA_API_KEY;
+      BASE_URL = 'https://kiraai.vn/api/v1';
+    }
+
+    if (!API_KEY) {
+      return NextResponse.json({ error: `API key for ${model.provider} is not configured in .env.local` }, { status: 500 });
     }
 
     // Extract attachments into HHTECH files format AND OpenAI vision format
@@ -71,37 +83,31 @@ export async function POST(req: NextRequest) {
       model: modelId,
       messages: formattedMessages,
       stream: true,
+      stream_options: { include_usage: true },
     };
 
     if (files.length > 0) {
       payload.files = files;
     }
 
-    const response = await fetch(`${HHTECH_BASE_URL}/chat/completions`, {
+    const response = await fetch(`${BASE_URL}/chat/completions`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${HHTECH_API_KEY}`,
+        'Authorization': `Bearer ${API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
     });
 
-    if (!response.ok) {
-      const errorData = await response.text();
-      let errorMessage = 'An error occurred with the AI provider.';
-      
-      if (response.status === 401 || response.status === 403) {
-        errorMessage = 'Authentication failed with the AI provider.';
-      } else if (response.status === 429) {
-        errorMessage = 'Rate limit exceeded. Please try again later.';
-      } else if (response.status >= 500) {
-        errorMessage = 'AI provider is currently experiencing issues.';
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error(`API Error (${model.provider} - ${response.status}):`, errorData);
+        // We will forward the exact response text back to the client so the UI can display it
+        return new NextResponse(errorData, {
+          status: response.status,
+          headers: { 'Content-Type': 'application/json' }
+        });
       }
-      
-      console.error(`HHTECH API Error (${response.status}):`, errorData);
-      
-      return NextResponse.json({ error: errorMessage }, { status: response.status });
-    }
 
     // Stream the response back
     const stream = new ReadableStream({

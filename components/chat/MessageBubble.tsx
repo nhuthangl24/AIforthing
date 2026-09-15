@@ -119,9 +119,14 @@ export function MessageBubble({ message }: { message: Message }) {
                   <span title="Prompt tokens">In: {message.usage.prompt_tokens}</span>
                   <span title="Completion tokens">Out: {message.usage.completion_tokens}</span>
                   <span title="Total tokens" className="font-medium text-foreground/70">Total: {message.usage.total_tokens}</span>
-                  {message.usage.estimated_cost !== undefined && (
+                  {message.usage.estimated_cost !== undefined && message.usage.estimated_cost > 0 && (
                     <span title="Estimated cost" className="text-orange-500/80">
                       -{new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 4 }).format(message.usage.estimated_cost)} Cr
+                    </span>
+                  )}
+                  {message.usage.estimated_cost !== undefined && message.usage.estimated_cost === 0 && (
+                    <span title="Tokens deducted" className="text-green-500/80">
+                      -{new Intl.NumberFormat('vi-VN').format(message.usage.total_tokens)} T
                     </span>
                   )}
                 </div>

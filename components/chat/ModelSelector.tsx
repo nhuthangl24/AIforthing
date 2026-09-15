@@ -4,7 +4,7 @@ import { useChatStore } from "@/lib/store/chat-store";
 import { models } from "@/lib/ai/models";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { useEffect, useState } from "react";
-import { Image as ImageIcon, Type } from "lucide-react";
+import { Image as ImageIcon, Type, Sparkles } from "lucide-react";
 
 interface ModelSelectorProps {
   conversationId?: string | null;
@@ -36,8 +36,9 @@ export function ModelSelector({ conversationId }: ModelSelectorProps) {
 
   // Sort models by cost
   const sortedModels = [...models].sort((a, b) => a.cost - b.cost);
-  const visionModels = sortedModels.filter(m => m.vision);
-  const textModels = sortedModels.filter(m => !m.vision);
+  const freeModels = sortedModels.filter(m => m.cost === 0);
+  const visionModels = sortedModels.filter(m => m.vision && m.cost > 0);
+  const textModels = sortedModels.filter(m => !m.vision && m.cost > 0);
 
   return (
     <Select value={currentModelId} onValueChange={handleValueChange}>
@@ -45,6 +46,27 @@ export function ModelSelector({ conversationId }: ModelSelectorProps) {
         <SelectValue placeholder="Select a model" />
       </SelectTrigger>
       <SelectContent>
+        {freeModels.length > 0 && (
+          <SelectGroup>
+            <SelectLabel className="flex items-center gap-2 text-green-500 font-semibold">
+              <Sparkles className="w-4 h-4" />
+              Miễn phí (Free Models)
+            </SelectLabel>
+            {freeModels.map((model) => (
+              <SelectItem key={model.id} value={model.id}>
+                <div className="flex flex-col items-start gap-1">
+                  <div className="font-medium">{model.name}</div>
+                  <div className="text-xs text-muted-foreground flex gap-2">
+                    <span>{model.provider}</span>
+                    <span>•</span>
+                    <span className="text-green-500/80">0 credits</span>
+                  </div>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        )}
+
         <SelectGroup>
           <SelectLabel className="flex items-center gap-2 text-orange-500/90 font-semibold">
             <ImageIcon className="w-4 h-4" />

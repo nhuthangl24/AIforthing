@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 const montserrat = Montserrat({
@@ -25,18 +24,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark">
       <body className={`${montserrat.variable} ${geistMono.variable} font-sans antialiased min-h-screen bg-[#111111] text-[#ededed]`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <TooltipProvider>
-            {children}
-          </TooltipProvider>
-        </ThemeProvider>
+        <TooltipProvider>
+          {children}
+        </TooltipProvider>
       </body>
     </html>
   );
