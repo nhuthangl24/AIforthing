@@ -51,6 +51,8 @@ export function ChatInterface() {
 
     setIsStreaming(true);
     abortControllerRef.current = new AbortController();
+    
+    let assistantMessageId = "";
 
     try {
       // Get updated messages from state
@@ -60,7 +62,7 @@ export function ChatInterface() {
 
       // Add a placeholder message for the assistant immediately to show thinking state
       addMessage(convId, { role: "assistant", content: "", thinking: true });
-      const assistantMessageId = useChatStore.getState().conversations[convId].messages.slice(-1)[0].id;
+      assistantMessageId = useChatStore.getState().conversations[convId].messages.slice(-1)[0].id;
 
       const res = await fetch("/api/chat", {
         method: "POST",
